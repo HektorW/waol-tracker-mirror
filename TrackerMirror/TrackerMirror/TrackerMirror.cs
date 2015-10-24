@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Kinect;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-
+using TrackerMirror.TrackerMirrorServer;
 
 
 namespace TrackerMirror
@@ -30,6 +31,15 @@ namespace TrackerMirror
         //// SkeletonStream
         private Skeleton[] skeletons;
         private Skeleton[] skeletonData;
+        private Skeleton firstSkeleton;
+
+
+        // Server
+        private Server server;
+
+        // User
+        private User user;
+
 
         public TrackerMirror()
         {
@@ -40,11 +50,7 @@ namespace TrackerMirror
         protected override void Initialize()
         {
             this.InitializeKinect();
-
-            this.graphics.PreferredBackBufferWidth = this.kinectTexture.Width;
-            this.graphics.PreferredBackBufferHeight = this.kinectTexture.Height;
-            this.graphics.ApplyChanges();
-
+            this.InitializeServer();
             base.Initialize();
         }
 
@@ -77,14 +83,25 @@ namespace TrackerMirror
             this.kinectSensor.Start();
         }
 
+        protected void InitializeServer()
+        {
+            this.server = new Server();
+            this.server.Start();
+        }
+
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
+            
+            this.graphics.PreferredBackBufferWidth = this.kinectTexture.Width;
+            this.graphics.PreferredBackBufferHeight = this.kinectTexture.Height;
+            this.graphics.ApplyChanges();
 
             // Textures
             this.textures = new Dictionary<string, Texture2D>();
             this.textures["whitepixel"] = new Texture2D(this.GraphicsDevice, 1, 1);
             this.textures["whitepixel"].SetData(new byte[] { (byte)255, (byte)255, (byte)255, (byte)255 });
+            this.textures["overlay"] = Content.Load<Texture2D>(@"overlay-300");
 
             // Fonts
             this.fonts = new Dictionary<string, SpriteFont>();
@@ -95,12 +112,37 @@ namespace TrackerMirror
         {
             this.kinectSensor.Stop();
             this.kinectSensor.Dispose();
+
+            this.server.Stop();
         }
 
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            var client = this.server.GetClosestClient();
+            if (this.user == null /*|| this.user.Client != client*/)
+            {
+                this.user = new User(this.kinectSensor, this.textures, client);
+            }
+
+            if (this.user != null)
+            {
+                //if (client == null)
+                //{
+                //    this.user.Deactivate();
+                //}
+
+                if (this.user.Active)
+                {
+                    this.user.Update(gameTime);
+                }
+                else
+                {
+                    this.user = null;
+                }
+            }
 
             base.Update(gameTime);
         }
@@ -109,25 +151,37 @@ namespace TrackerMirror
         {
             GraphicsDevice.Clear(Color.Black);
 
-            this.spriteBatch.Begin();
+            this.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
 
             lock (this.kinectLock)
             {
-                this.spriteBatch.Draw(this.kinectTexture, Vector2.Zero, Color.White);
+                this.kinectTexture.SetData(this.kinectColorPixels);
+            }
 
-                if (this.skeletons != null)
+            this.spriteBatch.Draw(this.kinectTexture, Vector2.Zero, Color.White);
+
+
+            if (this.skeletons != null)
+            {
+                foreach (var Skeleton in this.skeletons)
                 {
-                    foreach (var skeleton in this.skeletons)
-                    {
-                        this.DrawSkeleton(this.spriteBatch, skeleton);
-                    }
+                    this.DrawSkeleton(this.spriteBatch, Skeleton);
                 }
             }
-            
+
+
+            if (this.user != null)
+            {
+                this.user.Draw(this.spriteBatch);
+            }
+
+
+
             this.spriteBatch.End();
 
             base.Draw(gameTime);
         }
+
 
         protected void DrawSkeleton(SpriteBatch spriteBatch, Skeleton skeleton)
         {
@@ -138,15 +192,13 @@ namespace TrackerMirror
                     var position = this.kinectSensor.CoordinateMapper.MapSkeletonPointToColorPoint(joint.Position, this.kinectSensor.ColorStream.Format);
                     spriteBatch.Draw(textures["whitepixel"], new Rectangle((int)position.X - 5, (int)position.Y - 5, 10, 10), Color.Red);
                 }
-
-                var head = skeleton.Joints[JointType.Head];
-                if (head != null)
-                {
-                    var headPosition = this.kinectSensor.CoordinateMapper.MapSkeletonPointToColorPoint(head.Position, this.kinectSensor.ColorStream.Format);
-                    spriteBatch.DrawString(this.fonts["main"], "HEAD", new Vector2(headPosition.X, headPosition.Y - 20), Color.Red);
-                }
-                
             }
+        }
+
+        protected Vector2 GetCenteredVector(string str, SpriteFont font, Vector2 origin)
+        {
+            var size = font.MeasureString(str);
+            return origin - size / 2;
         }
 
 
@@ -158,18 +210,16 @@ namespace TrackerMirror
 
                 frame.CopyPixelDataTo(this.kinectColorPixelsRgba);
 
-                // Convert RGBA -> BGRA
-                for (int i = 0; i < this.kinectColorPixels.Length; i += 4)
-                {
-                    this.kinectColorPixels[i + 0] = this.kinectColorPixelsRgba[i + 2];
-                    this.kinectColorPixels[i + 1] = this.kinectColorPixelsRgba[i + 1];
-                    this.kinectColorPixels[i + 2] = this.kinectColorPixelsRgba[i];
-                    this.kinectColorPixels[i + 3] = (byte) 255;
-                }
-
                 lock (this.kinectLock)
                 {
-                    this.kinectTexture.SetData(this.kinectColorPixels);
+                    // Convert RGBA -> BGRA
+                    for (int i = 0; i < this.kinectColorPixels.Length; i += 4)
+                    {
+                        this.kinectColorPixels[i + 0] = this.kinectColorPixelsRgba[i + 2];
+                        this.kinectColorPixels[i + 1] = this.kinectColorPixelsRgba[i + 1];
+                        this.kinectColorPixels[i + 2] = this.kinectColorPixelsRgba[i];
+                        this.kinectColorPixels[i + 3] = (byte)255;
+                    }
                 }
             }
         }
@@ -192,16 +242,23 @@ namespace TrackerMirror
                 frame.CopySkeletonDataTo(this.skeletonData);
 
                 if (this.skeletonData == null) return;
+                
+                for (int i = 0; i < this.skeletonData.Length; i++)
+                {
+                    var skeleton = this.skeletonData[i];
+                    if (skeleton != null && skeleton.TrackingState == SkeletonTrackingState.Tracked)
+                    {
+                        this.skeletons[i] = this.skeletonData[i];
+                    }
+                }
 
                 lock (this.kinectLock)
                 {
-                    for (int i = 0; i < this.skeletonData.Length; i++)
+                    this.firstSkeleton = this.skeletons.FirstOrDefault(n => n != null);
+
+                    if (this.user != null)
                     {
-                        var skeleton = this.skeletonData[i];
-                        if (skeleton != null && skeleton.TrackingState == SkeletonTrackingState.Tracked)
-                        {
-                            this.skeletons[i] = this.skeletonData[i];
-                        }
+                        this.user.Skeleton = firstSkeleton;
                     }
                 }
             }
