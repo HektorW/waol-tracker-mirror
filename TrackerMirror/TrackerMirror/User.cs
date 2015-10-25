@@ -18,17 +18,6 @@ namespace TrackerMirror
             get { return this._skeleton; }
             set
             {
-                if (this._skeleton == null && value != null)
-                {
-                    this._started = true;
-                    //this.alphaAnimation.Paused = false;
-                }
-                if (value == null)
-                {
-                    //this.alphaAnimation.Reset();
-                    //this.alphaAnimation.Paused = true;
-                }
-
                 this._skeleton = value;
             }
         }
@@ -42,7 +31,6 @@ namespace TrackerMirror
         private bool _started = false;
 
         // Animations
-        private FloatAnimation alphaAnimation;
         private ColorAnimation overlayAnimation;
 
         private FloatAnimation nameOpacityAnimation;
@@ -57,7 +45,19 @@ namespace TrackerMirror
         private Vector2Animation emailPositionAnimation;
         private StringAnimation emailStringAnimation;
 
+        private FloatAnimation heightOpacityAnimation;
+        private Vector2Animation heightPositionAnimation;
+        private StringAnimation heightStringAnimation;
+
+        private FloatAnimation shoeSizeOpacityAnimation;
+        private Vector2Animation shoeSizePositionAnimation;
+        private StringAnimation shoeSizeStringAnimation;
+
         private bool AnimationsSetup => this.nameOpacityAnimation != null;
+
+        // Strings
+        private string heightString;
+        private string shoeString;
 
         // Focus point
         private Vector2 focusPoint;
@@ -72,9 +72,6 @@ namespace TrackerMirror
 
             this.Active = true;
 
-
-            //this.alphaAnimation = new FloatAnimation(0.0f, 0.8f, TimeSpan.FromSeconds(1.5));
-
             this.focusPoint = new Vector2();
             this.overlayRectangle = new Rectangle(0, 0, this.trackerMirror.Width, this.trackerMirror.Height);
         }
@@ -86,19 +83,33 @@ namespace TrackerMirror
             var client = this.Client;
             var data = client.ClientData;
 
+            this.heightString = $"Height: {data.Height}";
+            this.shoeString = $"Shoe size: {data.ShoeSize}";
+
+
             this.overlayAnimation = new ColorAnimation(Color.White, client.Color, TimeSpan.FromSeconds(1.5));
 
-            this.nameOpacityAnimation = new FloatAnimation(0.0f, 1.0f, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(2));
-            this.namePositionAnimation = new Vector2Animation(new Vector2(0, -20), new Vector2(100, -20), TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(2));
+            float alpha = 0.7f;
+
+            this.nameOpacityAnimation = new FloatAnimation(0.0f, alpha, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(2));
+            this.namePositionAnimation = new Vector2Animation(new Vector2(0, -30), new Vector2(50, -30), TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(2));
             this.nameStringAnimation = new StringAnimation("", data.Name, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(2));
 
-            this.surnameOpacityAnimation = new FloatAnimation(0.0f, 1.0f, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(3));
-            this.surnamePositionAnimation = new Vector2Animation(new Vector2(0, 5), new Vector2(100, 5), TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(3));
+            this.surnameOpacityAnimation = new FloatAnimation(0.0f, alpha, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(3));
+            this.surnamePositionAnimation = new Vector2Animation(new Vector2(0, -5), new Vector2(50, -5), TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(3));
             this.surnameStringAnimation = new StringAnimation("", data.Surname, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(3));
 
-            this.emailOpacityAnimation = new FloatAnimation(0.0f, 1.0f, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(4));
-            this.emailPositionAnimation = new Vector2Animation(new Vector2(0, 25), new Vector2(100, 25), TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(4));
+            this.emailOpacityAnimation = new FloatAnimation(0.0f, alpha, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(4));
+            this.emailPositionAnimation = new Vector2Animation(new Vector2(0, 20), new Vector2(50, 20), TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(4));
             this.emailStringAnimation = new StringAnimation("", data.Email, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(4));
+
+            this.heightOpacityAnimation = new FloatAnimation(0.0f, alpha, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(5));
+            this.heightPositionAnimation = new Vector2Animation(new Vector2(-40, 0), new Vector2(-40, 120), TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(5));
+            this.heightStringAnimation = new StringAnimation("", heightString, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(5));
+
+            this.shoeSizeOpacityAnimation = new FloatAnimation(0.0f, alpha, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(6));
+            this.shoeSizePositionAnimation = new Vector2Animation(new Vector2(-40, 100), new Vector2(-40, 150), TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(6));
+            this.shoeSizeStringAnimation = new StringAnimation("", shoeString, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(6));
         }
 
         public void Deactivate()
@@ -125,38 +136,31 @@ namespace TrackerMirror
                 }
 
                 this.overlayAnimation.Update(time);
+
+                this.nameOpacityAnimation.Update(time);
+                this.namePositionAnimation.Update(time);
+                this.nameStringAnimation.Update(time);
+
+                this.surnameOpacityAnimation.Update(time);
+                this.surnamePositionAnimation.Update(time);
+                this.surnameStringAnimation.Update(time);
+
+                this.emailOpacityAnimation.Update(time);
+                this.emailPositionAnimation.Update(time);
+                this.emailStringAnimation.Update(time);
+
+                this.heightOpacityAnimation.Update(time);
+                this.heightPositionAnimation.Update(time);
+                this.heightStringAnimation.Update(time);
+
+                this.shoeSizeOpacityAnimation.Update(time);
+                this.shoeSizePositionAnimation.Update(time);
+                this.shoeSizeStringAnimation.Update(time);
             }
-            
-            //if (this._started)
-            //{
-            //    this.alphaAnimation.Update(time);
-
-            //    if (this.Client.ClientData != null)
-            //    {
-            //        this.SetupDataAnimations();
-
-            //        this.nameOpacityAnimation.Update(time);
-            //        this.namePositionAnimation.Update(time);
-            //        this.nameStringAnimation.Update(time);
-
-            //        this.surnameOpacityAnimation.Update(time);
-            //        this.surnamePositionAnimation.Update(time);
-            //        this.surnameStringAnimation.Update(time);
-
-            //        this.emailOpacityAnimation.Update(time);
-            //        this.emailPositionAnimation.Update(time);
-            //        this.emailStringAnimation.Update(time);
-            //    }
-            //}
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            // Draw overlay
-            //var texture = this.trackerMirror.textures["overlay"];
-            //spriteBatch.Draw(texture, focusPoint - new Vector2(texture.Width / 2.0f, texture.Height / 2.0f + 0.0f), new Color(this.Client.Color, this.alphaAnimation.Value));
-            //spriteBatch.Draw(texture, this.focusPoint - new Vector2(texture.Width / 2.0f, texture.Height / 2.0f + 0.0f), new Color(this.Client.Color, 1.0f));
-
             // Overlay
             if (this.AnimationsSetup)
             {
@@ -174,17 +178,20 @@ namespace TrackerMirror
             {
                 var data = this.Client.ClientData;
                 var font = this.trackerMirror.fonts["main"];
-                //spriteBatch.DrawString(font, this.nameStringAnimation.Value, focusPoint + this.namePositionAnimation.Value, new Color(Color.White, this.nameOpacityAnimation.Value));
-                //spriteBatch.DrawString(font, this.surnameStringAnimation.Value, focusPoint + this.surnamePositionAnimation.Value, new Color(Color.White, this.surnameOpacityAnimation.Value));
-                //spriteBatch.DrawString(font, this.emailStringAnimation.Value, focusPoint + this.emailPositionAnimation.Value, new Color(Color.White, this.emailOpacityAnimation.Value));
-
-                spriteBatch.DrawString(font, data.Name, this.focusPoint + this.namePositionAnimation.To, Color.White);
-                spriteBatch.DrawString(font, data.Surname, this.focusPoint + this.surnamePositionAnimation.To, Color.White);
-                spriteBatch.DrawString(font, data.Email, this.focusPoint + this.emailPositionAnimation.To, Color.White);
+                spriteBatch.DrawString(font, this.nameStringAnimation.Value, focusPoint + this.namePositionAnimation.Value, new Color(Color.White, this.nameOpacityAnimation.Value));
+                spriteBatch.DrawString(font, this.surnameStringAnimation.Value, focusPoint + this.surnamePositionAnimation.Value, new Color(Color.White, this.surnameOpacityAnimation.Value));
+                spriteBatch.DrawString(font, this.emailStringAnimation.Value, focusPoint + this.emailPositionAnimation.Value, new Color(Color.White, this.emailOpacityAnimation.Value));
+                spriteBatch.DrawString(font, this.heightStringAnimation.Value, focusPoint + this.heightPositionAnimation.Value, new Color(Color.White, this.heightOpacityAnimation.Value));
+                spriteBatch.DrawString(font, this.shoeSizeStringAnimation.Value, focusPoint + this.shoeSizePositionAnimation.Value, new Color(Color.White, this.shoeSizeOpacityAnimation.Value));
             }
             else
             {
                 spriteBatch.DrawString(this.trackerMirror.fonts["main"], this.Client.ClientData == null ? "No client data" : "Has client data, no skeleton", Vector2.Zero, Color.White);
+            }
+
+            if (this.Skeleton == null)
+            {
+                spriteBatch.DrawString(this.trackerMirror.fonts["main"], "no skeleton", Vector2.Zero, Color.White);
             }
         }
 
@@ -196,7 +203,7 @@ namespace TrackerMirror
                 var head = this.Skeleton.Joints[JointType.Head];
                 if (head != null)
                 {
-                    var position = this.KinectSensor.CoordinateMapper.MapSkeletonPointToColorPoint(head.Position, this.KinectSensor.ColorStream.Format);
+                    var position = this.trackerMirror.SkeletonPointToScreen(head.Position);
                     this.focusPoint.X = position.X;
                     this.focusPoint.Y = position.Y;
                     return;

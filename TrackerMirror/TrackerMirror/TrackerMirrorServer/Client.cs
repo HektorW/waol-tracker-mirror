@@ -50,6 +50,7 @@ namespace TrackerMirror.TrackerMirrorServer
 
         public void Destroy()
         {
+            Console.WriteLine("Destroying client");
             this.running = false;
 
             this.streamWriter.Close();

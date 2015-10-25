@@ -12,8 +12,8 @@ namespace TrackerMirror
 {
     public class TrackerMirror : Game
     {
-        public int Width { get; private set; } = 800;
-        public int Height { get; private set; } = 600;
+        public int Width { get; private set; } = 1600;
+        public int Height { get; private set; } = 900;
         public Rectangle ScreenRectangle;
 
         // Graphics
@@ -106,6 +106,7 @@ namespace TrackerMirror
             
             this.graphics.PreferredBackBufferWidth = this.Width;
             this.graphics.PreferredBackBufferHeight = this.Height;
+            this.graphics.IsFullScreen = true;
             this.graphics.ApplyChanges();
 
             this.ScreenRectangle = new Rectangle(0, 0, this.Width, this.Height);
@@ -142,10 +143,6 @@ namespace TrackerMirror
 
 
             var client = this.server.GetClosestClient();
-            //if (client != null && (this.user == null || this.user.Client.ID != client.ID))
-            //{
-                //this.user = new User(this, this.kinectSensor, client);
-            //}
             if (client == null)
             {
                 this.user = null;
@@ -160,20 +157,8 @@ namespace TrackerMirror
 
             if (this.user != null)
             {
+                this.user.Skeleton = this.firstSkeleton;
                 this.user.Update(gameTime);
-                //if (client == null)
-                //{
-                //    this.user.Deactivate();
-                //}
-
-                //if (this.user.Active)
-                //{
-                //    this.user.Update(gameTime);
-                //}
-                //else
-                //{
-                //    this.user = null;
-                //}
             }
 
             base.Update(gameTime);
@@ -183,37 +168,47 @@ namespace TrackerMirror
         {
             GraphicsDevice.Clear(Color.White);
 
-            //this.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
-            this.spriteBatch.Begin(SpriteSortMode.Immediate, this.blendMultiply);
-
+            
             lock (this.kinectLock)
             {
                 // Set video data
                 this.kinectTexture.SetData(this.kinectColorPixels);
             }
 
+            //var b = new BlendState();
+
+
+            //this.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
+            this.spriteBatch.Begin(SpriteSortMode.Immediate, this.blendMultiply);
+            //this.spriteBatch.Begin(SpriteSortMode.Immediate);
+
             // Draw video
             this.spriteBatch.Draw(this.kinectTexture, this.ScreenRectangle, Color.White);
-            //this.spriteBatch.Draw(this.textures["whitepixel"], new Rectangle(0, 0, 640, 480), new Color(130, 20, 75));
+
+            //this.spriteBatch.End();
+            //this.spriteBatch.Begin(SpriteSortMode.Immediate, this.blendMultiply);
+
+            //this.spriteBatch.Draw(this.textures["whitepixel"], this.ScreenRectangle, new Color(130, 20, 75));
+
 
             if (this.skeletons != null)
             {
-                foreach (var Skeleton in this.skeletons)
-                {
-                    this.DrawSkeleton(this.spriteBatch, Skeleton);
-                }
+                //    foreach (var Skeleton in this.skeletons)
+                //    {
+                //        this.DrawSkeleton(this.spriteBatch, Skeleton);
+                //    }
             }
+
             if (this.user != null)
             {
                 this.user.Draw(this.spriteBatch);
             }
 
-            // Finish blend drawing
-                this.spriteBatch.End();
+            this.spriteBatch.End(); // Finish blend drawing
 
 
             // Draw strings
-            this.spriteBatch.Begin();
+            this.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
             if (this.user != null)
             {
                 this.user.DrawStrings(this.spriteBatch);
@@ -284,6 +279,15 @@ namespace TrackerMirror
                 if (this.skeletons == null || this.skeletons.Length != frame.SkeletonArrayLength)
                 {
                     this.skeletons = new Skeleton[frame.SkeletonArrayLength];
+                }
+
+                if (this.skeletonData != null)
+                {
+                    for (var i = 0; i < skeletonData.Length; i++) skeletonData[i] = null;
+                }
+                if (this.skeletons != null)
+                {
+                    for (var i = 0; i < this.skeletons.Length; i++) this.skeletons[i] = null;
                 }
 
                 frame.CopySkeletonDataTo(this.skeletonData);

@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework;
 
 namespace TrackerMirror.Animation
 {
-    public class Animation<T>
+    public abstract class Animation<T>
     {
         public T Value { get; set; }
         public T From { get; set; }
@@ -61,10 +61,7 @@ namespace TrackerMirror.Animation
             return 0.5 - Math.Cos(t * Math.PI) / 2.0;
         }
 
-        protected virtual T Step(float step)
-        {
-            return From;
-        }
+        protected abstract T Step(float step);
 
         public virtual void Set(T from, T to)
         {
