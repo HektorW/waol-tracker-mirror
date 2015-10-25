@@ -17,7 +17,7 @@ namespace TrackerMirror.Animation
         {
         }
 
-        protected override string Lerp(float step)
+        protected override string Step(float step)
         {
             var length = this.To.Length - this.From.Length;
             var delta = (int)(length * step + 0.5);

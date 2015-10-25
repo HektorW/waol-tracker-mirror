@@ -67,6 +67,11 @@ namespace TrackerMirror.TrackerMirrorServer
             this.thread.Abort();
         }
 
+        private void Disconnect()
+        {
+            this.server.RemoveClient(this);
+        }
+
         private void Listen(object sender)
         {
             this.Send("Started listening");
@@ -83,7 +88,7 @@ namespace TrackerMirror.TrackerMirrorServer
                 catch (Exception e)
                 {
                     // Handle disconnects
-                    this.server.RemoveClient(this);
+                    this.Disconnect();
                 }
 
                 streamBuffer = Encoding.UTF8.GetString(byteList, 0, dataSize);
@@ -98,11 +103,11 @@ namespace TrackerMirror.TrackerMirrorServer
             {
                 data = JObject.Parse(message);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                this.Disconnect();
                 return;
             }
-            
 
             var distance = data["distance"];
             var color = data["color"];
@@ -122,8 +127,6 @@ namespace TrackerMirror.TrackerMirrorServer
             {
                 this.ClientData = JsonConvert.DeserializeObject<ClientData>(info.ToString());
             }
-
-            Console.WriteLine(message);
         }
 
         public void Send(string message)

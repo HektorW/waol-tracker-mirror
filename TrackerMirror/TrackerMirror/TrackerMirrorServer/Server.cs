@@ -48,9 +48,7 @@ namespace TrackerMirror.TrackerMirrorServer
         public void Stop()
         {
             this.runningServer = false;
-
             this.listener.Stop();
-
             this.incommingThread.Abort();
         }
 
@@ -58,10 +56,20 @@ namespace TrackerMirror.TrackerMirrorServer
         {
             while (this.runningServer)
             {
-                var socket = listener.AcceptSocket();
+                Socket socket = null;
+                try
+                {
+                    socket = listener.AcceptSocket();
+                }
+                catch(Exception)
+                {
+                    this.Stop();
+                    return;
+                }
 
                 lock (this.clientsLock)
                 {
+                    Console.WriteLine("New Client connection " + socket);
                     this.clients.Add(new Client(this, socket, _clientguid++));
                 }
             }

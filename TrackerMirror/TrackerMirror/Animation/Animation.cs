@@ -21,7 +21,6 @@ namespace TrackerMirror.Animation
 
         public bool Reversed { get; protected set; }
 
-        public bool Paused { get; set; } = false;
         public bool Done => this.Elapsed >= this.Duration + this.Delay;
 
         
@@ -42,7 +41,7 @@ namespace TrackerMirror.Animation
 
         public virtual void Update(GameTime time)
         {
-            if (this.Paused || this.Done) return;
+            if (this.Done) return;
             
             this.Elapsed += time.ElapsedGameTime;
             if (this.Elapsed >= this.Duration + this.Delay)
@@ -53,7 +52,7 @@ namespace TrackerMirror.Animation
             if (this.Elapsed >= this.Delay)
             {
                 float step = (float)(this.Elapsed.Ticks - this.Delay.Ticks) / (float)this.Duration.Ticks;
-                this.Value = this.Lerp((float)this.Swing(step));
+                this.Value = this.Step((float)this.Swing(step));
             }
         }
 
@@ -62,9 +61,15 @@ namespace TrackerMirror.Animation
             return 0.5 - Math.Cos(t * Math.PI) / 2.0;
         }
 
-        protected virtual T Lerp(float step)
+        protected virtual T Step(float step)
         {
             return From;
+        }
+
+        public virtual void Set(T from, T to)
+        {
+            this.OriginalFrom = this.From = from;
+            this.OriginalTo = this.To = to;
         }
 
         public virtual void Reset()
@@ -81,6 +86,12 @@ namespace TrackerMirror.Animation
             this.Elapsed = this.Duration - this.Elapsed;
             this.From = this.Value;
             this.Reversed = !this.Reversed;
+        }
+
+
+        protected float Lerp(float a, float b, float t)
+        {
+            return a + (b - a) * t;
         }
     }
 }

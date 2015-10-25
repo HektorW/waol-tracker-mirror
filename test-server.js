@@ -14,18 +14,28 @@ socket.connect({
 
 socket.on('data', (data) => { console.log('Server: ', data); });
 
+function randInt(min, max) { return Math.floor(min + (Math.random() * (max - min))); }
+
 socket.on('connect', () => {
 	console.log('Connected to socket');
 
+	let color = {
+		r: 133,
+		g: 20,
+		b: 75
+	};
+
 	setInterval(() => {
-		console.log('Writing data');
+		console.log('Changing color');
+		color.r = randInt(0, 255);
+		color.g = randInt(0, 255);
+		color.b = randInt(0, 255);
+	}, 5000);
+
+	setInterval(() => {
 		socket.write(JSON.stringify({
 			distance: 1.0,
-			color: {
-				r: 133,
-				g: 20,
-				b: 75
-			},
+			color,
 			info: {
 				name: 'Hektor',
 				surname: 'Wallin',

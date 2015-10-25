@@ -17,7 +17,7 @@ namespace TrackerMirror.Animation
         {
         }
 
-        protected override Vector2 Lerp(float step)
+        protected override Vector2 Step(float step)
         {
             return Vector2.Lerp(this.From, this.To, step);
         }

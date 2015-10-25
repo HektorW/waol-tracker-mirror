@@ -12,8 +12,16 @@ namespace TrackerMirror
 {
     public class TrackerMirror : Game
     {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
+        public int Width { get; private set; } = 800;
+        public int Height { get; private set; } = 600;
+        public Rectangle ScreenRectangle;
+
+        // Graphics
+        private GraphicsDeviceManager graphics;
+        private SpriteBatch spriteBatch;
+
+        // Blendstate
+        private BlendState blendMultiply;
 
         // Fonts
         public Dictionary<string, SpriteFont> fonts;
@@ -70,8 +78,11 @@ namespace TrackerMirror
                 throw new Exception("No kinect device could be found");
             }
 
+            // Streams
             this.kinectSensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
             this.kinectSensor.SkeletonStream.Enable();
+
+            // Events
             this.kinectSensor.ColorFrameReady += this.OnKinectColorFrame;
             this.kinectSensor.SkeletonFrameReady += this.OnKinectSkeletonFrame;
 
@@ -93,9 +104,17 @@ namespace TrackerMirror
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
             
-            this.graphics.PreferredBackBufferWidth = 641;
-            this.graphics.PreferredBackBufferHeight = this.kinectTexture.Height;
+            this.graphics.PreferredBackBufferWidth = this.Width;
+            this.graphics.PreferredBackBufferHeight = this.Height;
             this.graphics.ApplyChanges();
+
+            this.ScreenRectangle = new Rectangle(0, 0, this.Width, this.Height);
+            
+            // Blendstate
+            this.blendMultiply = new BlendState();
+            this.blendMultiply.ColorBlendFunction = BlendFunction.Add;
+            this.blendMultiply.ColorSourceBlend = Blend.DestinationColor;
+            this.blendMultiply.ColorDestinationBlend = Blend.Zero;
 
             // Textures
             this.textures = new Dictionary<string, Texture2D>();
@@ -118,8 +137,9 @@ namespace TrackerMirror
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
 
             var client = this.server.GetClosestClient();
             //if (client != null && (this.user == null || this.user.Client.ID != client.ID))
@@ -163,13 +183,8 @@ namespace TrackerMirror
         {
             GraphicsDevice.Clear(Color.White);
 
-            var blendState = new BlendState();
-            blendState.ColorBlendFunction = BlendFunction.Add;
-            blendState.ColorSourceBlend = Blend.DestinationColor;
-            blendState.ColorDestinationBlend = Blend.Zero;
-
             //this.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
-            this.spriteBatch.Begin(SpriteSortMode.Immediate, blendState);
+            this.spriteBatch.Begin(SpriteSortMode.Immediate, this.blendMultiply);
 
             lock (this.kinectLock)
             {
@@ -178,8 +193,8 @@ namespace TrackerMirror
             }
 
             // Draw video
-            this.spriteBatch.Draw(this.kinectTexture, Vector2.Zero, Color.White);
-            this.spriteBatch.Draw(this.textures["whitepixel"], new Rectangle(0, 0, 640, 480), new Color(130, 20, 75));
+            this.spriteBatch.Draw(this.kinectTexture, this.ScreenRectangle, Color.White);
+            //this.spriteBatch.Draw(this.textures["whitepixel"], new Rectangle(0, 0, 640, 480), new Color(130, 20, 75));
 
             if (this.skeletons != null)
             {
@@ -188,10 +203,20 @@ namespace TrackerMirror
                     this.DrawSkeleton(this.spriteBatch, Skeleton);
                 }
             }
-
             if (this.user != null)
             {
                 this.user.Draw(this.spriteBatch);
+            }
+
+            // Finish blend drawing
+                this.spriteBatch.End();
+
+
+            // Draw strings
+            this.spriteBatch.Begin();
+            if (this.user != null)
+            {
+                this.user.DrawStrings(this.spriteBatch);
             }
             else
             {
@@ -210,18 +235,19 @@ namespace TrackerMirror
             {
                 foreach (Joint joint in skeleton.Joints)
                 {
-                    var position = this.kinectSensor.CoordinateMapper.MapSkeletonPointToColorPoint(joint.Position, this.kinectSensor.ColorStream.Format);
-                    spriteBatch.Draw(textures["whitepixel"], new Rectangle((int)position.X - 5, (int)position.Y - 5, 10, 10), new Color(Color.Red, 0.3f));
+                    var position = this.SkeletonPointToScreen(joint.Position);
+                    spriteBatch.Draw(textures["whitepixel"], new Rectangle((int)position.X - 5, (int)position.Y - 5, 10, 10), Color.Black);
                 }
             }
         }
 
-        protected Vector2 GetCenteredVector(string str, SpriteFont font, Vector2 origin)
-        {
-            var size = font.MeasureString(str);
-            return origin - size / 2;
-        }
 
+        public Vector2 SkeletonPointToScreen(SkeletonPoint point)
+        {
+            //var position = this.kinectSensor.CoordinateMapper.MapSkeletonPointToColorPoint(point, this.kinectSensor.ColorStream.Format);
+            //return new Vector2(position.X, position.Y);
+            return new Vector2((((0.5f * point.X) + 0.5f) * (this.Width)), (((-0.5f * point.Y) + 0.5f) * (Height)));
+        }
 
         protected void OnKinectColorFrame(object sender, ColorImageFrameReadyEventArgs frameArgs)
         {

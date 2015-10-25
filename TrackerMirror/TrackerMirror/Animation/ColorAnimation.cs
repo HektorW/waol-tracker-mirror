@@ -13,7 +13,7 @@ namespace TrackerMirror.Animation
         {
         }
 
-        protected override Color Lerp(float step)
+        protected override Color Step(float step)
         {
             return Color.Lerp(this.From, this.To, step);
         }
