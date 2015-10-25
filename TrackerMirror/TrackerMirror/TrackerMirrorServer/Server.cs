@@ -68,6 +68,14 @@ namespace TrackerMirror.TrackerMirrorServer
         }
 
 
+        public void RemoveClient(Client client)
+        {
+            lock (this.AccessLock)
+            {
+                this.clients.Remove(client);
+                client.Destroy();
+            }
+        }
 
         public Client GetClosestClient()
         {

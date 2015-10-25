@@ -39,8 +39,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Animation\Animation.cs" />
+    <Compile Include="Animation\ColorAnimation.cs" />
     <Compile Include="Animation\FloatAnimation.cs" />
     <Compile Include="Animation\StringAnimation.cs" />
+    <Compile Include="Animation\Vector2Animation.cs" />
     <Compile Include="TrackerMirrorServer\Client.cs" />
     <Compile Include="TrackerMirrorServer\ClientData.cs" />
     <Compile Include="TrackerMirrorServer\Server.cs" />

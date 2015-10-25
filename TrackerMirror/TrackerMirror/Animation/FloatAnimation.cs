@@ -12,6 +12,11 @@ namespace TrackerMirror.Animation
         {
         }
 
+        public FloatAnimation(float from, float to, TimeSpan duration, TimeSpan delay)
+            : base(from, to, duration, delay)
+        {
+        }
+
         protected override float Lerp(float step)
         {
             return this.From + (this.To - this.From) * step;

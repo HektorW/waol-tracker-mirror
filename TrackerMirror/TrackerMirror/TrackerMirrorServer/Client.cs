@@ -79,12 +79,11 @@ namespace TrackerMirror.TrackerMirrorServer
                 try
                 {
                     dataSize = socket.Receive(byteList);
-                    //streamBuffer = this.streamReader.ReadToEnd();
                 }
-                catch (IOException e)
+                catch (Exception e)
                 {
                     // Handle disconnects
-                    throw e;
+                    this.server.RemoveClient(this);
                 }
 
                 streamBuffer = Encoding.UTF8.GetString(byteList, 0, dataSize);
@@ -94,7 +93,16 @@ namespace TrackerMirror.TrackerMirrorServer
 
         private void ParseMessage(string message)
         {
-            var data = JObject.Parse(message);
+            JObject data = null;
+            try
+            {
+                data = JObject.Parse(message);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+            
 
             var distance = data["distance"];
             var color = data["color"];
@@ -121,18 +129,6 @@ namespace TrackerMirror.TrackerMirrorServer
         public void Send(string message)
         {
             this.streamWriter.Write(message);
-        }
-
-
-
-        public static bool operator ==(Client a, Client b)
-        {
-            return a != null && b != null && a.ID == b.ID;
-        }
-
-        public static bool operator !=(Client a, Client b)
-        {
-            return a == null || b == null || a.ID != b.ID;
         }
     }
 }

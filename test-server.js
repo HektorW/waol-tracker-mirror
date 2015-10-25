@@ -17,21 +17,21 @@ socket.on('data', (data) => { console.log('Server: ', data); });
 socket.on('connect', () => {
 	console.log('Connected to socket');
 
-	setTimeout(() => {
+	setInterval(() => {
 		console.log('Writing data');
 		socket.write(JSON.stringify({
 			distance: 1.0,
 			color: {
-				r: 255,
-				g: 0,
-				b: 0
+				r: 133,
+				g: 20,
+				b: 75
 			},
 			info: {
-				name: 'Name',
-				surname: 'Surname',
-				email: 'Email',
-				height: 'Height',
-				shoeSize: 'ShoeSize'
+				name: 'Hektor',
+				surname: 'Wallin',
+				email: 'hektorw@gmail.com',
+				height: '182',
+				shoeSize: '41'
 			}
 		}), 'utf8');
 	}, 1000);
